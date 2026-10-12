@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RL Lab Test Suite — 28 Algorithmic Invariants</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { padding: 2rem 1rem; background-color: var(--bg-app); color: var(--text-main); }
+    .test-page-container { max-width: 860px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="test-page-container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h1 class="card-title">RL Lab Automated Test Suite (28 Tests)</h1>
+          <p class="card-subtitle">Comprehensive validation of Game Engine (1-8), Tabular Q-Learning (9-18), and Integration/Usability (19-28).</p>
+        </div>
+        <div id="test-summary-badge">
+          <span class="badge badge-secondary">Running 28 tests...</span>
+        </div>
+      </div>
+      <div id="test-results-container">
+        <!-- Injected by script -->
+      </div>
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+        <button id="btn-re-run" class="btn btn-primary" onclick="runTests()">Re-run All 28 Tests</button>
+        <a href="index.html" class="btn btn-outline">&larr; Return to RL Lab</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+  <script src="js/agent.js"></script>
+  <script src="js/tests.js"></script>
+  <script>
+    function runTests() {
+      const suite = new RLTestSuite();
+      const results = suite.runAllTests();
+      const badge = document.getElementById('test-summary-badge');
+      const container = document.getElementById('test-results-container');
+
+      badge.innerHTML = results.allPassed
+        ? `<span class="badge badge-success">✓ All ${results.passedCount}/${results.totalCount} Tests Passed (100%)</span>`
+        : `<span class="badge badge-danger">✗ ${results.totalCount - results.passedCount} Failed</span>`;
+
+      let html = '<div class="test-results-list">';
+      results.details.forEach(res => {
+        html += `
+          <div class="test-item ${res.passed ? 'test-passed' : 'test-failed'}">
+            <span class="test-icon">${res.passed ? '✓' : '✗'}</span>
+            <div class="test-content">
+              <strong>${res.testName}</strong>
+              <p class="test-msg">${res.message}</p>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', runTests);
+  </script>
+</body>
+</html>

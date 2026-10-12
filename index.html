@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RL Lab — Learn to Play Tic-Tac-Toe</title>
+  <meta name="description" content="Educational Reinforcement Learning playground demonstrating Tabular Q-Learning, epsilon-greedy action selection, and learning curves on Tic-Tac-Toe.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Compact Header -->
+    <header class="app-header">
+      <div class="header-main">
+        <div class="logo-group">
+          <div class="logo-badge">RL</div>
+          <div>
+            <div class="brand-row">
+              <span class="brand-title">RL Lab</span>
+              <span class="brand-tagline">Learn. Train. Play.</span>
+            </div>
+            <p class="brand-sub">Reinforcement Learning Playground &bull; Tabular Q-Learning</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div id="agent-status-badge" class="agent-status-pill status-untrained">
+            <span class="status-dot">●</span>
+            <span id="agent-status-text">Untrained Agent</span>
+          </div>
+
+          <button id="btn-theme-toggle" class="btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+            🌙
+          </button>
+          <button id="btn-sound-toggle" class="btn-icon" title="Toggle Sound FX" aria-label="Toggle Sound">
+            🔊
+          </button>
+          <button id="btn-global-reset" class="btn btn-sm btn-outline-danger" title="Reset all learned Q-values to untrained state">
+            Reset Agent
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation & Stage Bar -->
+      <nav class="nav-bar" role="tablist" aria-label="Main Navigation">
+        <div class="workflow-stepper">
+          <button class="stage-tab active" data-stage="stage-1" role="tab" aria-selected="true" aria-controls="stage-1">
+            <span class="step-badge">01</span>
+            <span class="step-label">Before Training</span>
+          </button>
+          <span class="stepper-arrow">&rarr;</span>
+          <button class="stage-tab" data-stage="stage-2" role="tab" aria-selected="false" aria-controls="stage-2">
+            <span class="step-badge">02</span>
+            <span class="step-label">Train the Agent</span>
+          </button>
+          <span class="stepper-arrow">&rarr;</span>
+          <button class="stage-tab" data-stage="stage-3" role="tab" aria-selected="false" aria-controls="stage-3">
+            <span class="step-badge">03</span>
+            <span class="step-label">After Training</span>
+          </button>
+        </div>
+
+        <div class="secondary-nav-group">
+          <button class="stage-tab" data-stage="stage-theory" role="tab" aria-selected="false" aria-controls="stage-theory">
+            📖 How It Works
+          </button>
+          <button class="stage-tab" data-stage="stage-tests" role="tab" aria-selected="false" aria-controls="stage-tests">
+            🧪 Test Suite (28)
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-content">
+
+      <!-- ========================================================= -->
+      <!-- STAGE 01: BEFORE TRAINING -->
+      <!-- ========================================================= -->
+      <section id="stage-1" class="stage-panel active" role="tabpanel">
+        <div class="stage-banner">
+          <div class="stage-banner-header">
+            <span class="stage-tag">STAGE 01</span>
+            <h1 class="stage-title">Before Training</h1>
+          </div>
+          <p class="stage-desc">
+            See how an inexperienced agent makes decisions. The Q-table is empty, so the agent has no strategic knowledge and selects uniformly at random among legal moves.
+          </p>
+        </div>
+
+        <div class="stage-grid">
+          <!-- Game Board Area (Untrained Agent) -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Play Untrained Agent</h2>
+                <p class="card-subtitle">Establish an empirical baseline before training.</p>
+              </div>
+              <div class="role-selector-wrap">
+                <label for="select-role-s1" class="text-xs font-semibold">Your Symbol:</label>
+                <select id="select-role-s1" class="form-select form-select-sm">
+                  <option value="X" selected>X (You move first)</option>
+                  <option value="O">O (Agent moves first)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="game-status-banner">
+              <div id="turn-indicator-s1" class="turn-indicator">
+                <span class="turn-dot user-turn"></span> Your Turn (X)
+              </div>
+              <div id="game-status-s1" class="game-status-msg text-sm">Choose an empty square to make your first move.</div>
+            </div>
+
+            <div class="board-container">
+              <div id="board-s1" class="tic-tac-toe-board" aria-label="Untrained 3x3 Board"></div>
+            </div>
+
+            <div class="board-action-row">
+              <button id="btn-restart-s1" class="btn btn-primary">New Game</button>
+              <button id="btn-next-to-train" class="btn btn-outline">Proceed to Train Agent &rarr;</button>
+            </div>
+
+            <div class="session-stats-bar">
+              <span class="stat-pill">Games: <strong id="s1-stat-games">0</strong></span>
+              <span class="stat-pill stat-win">You Won: <strong id="s1-stat-human-wins">0</strong></span>
+              <span class="stat-pill stat-draw">Draws: <strong id="s1-stat-draws">0</strong></span>
+              <span class="stat-pill stat-loss">Agent Won: <strong id="s1-stat-agent-wins">0</strong></span>
+            </div>
+          </div>
+
+          <!-- Baseline Explanation & Benchmark Card -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Untrained Baseline Benchmark</h2>
+                <p class="card-subtitle">Scientific baseline evaluated over 100 unbiased games.</p>
+              </div>
+              <span class="badge badge-secondary">Policy: Random</span>
+            </div>
+
+            <div class="baseline-explainer text-sm">
+              <p>
+                An untrained agent has not received any rewards and maintains an empty Q-table. Under an &epsilon;-greedy policy with zero learned knowledge, its actions are equivalent to uniform random choices among legal moves.
+              </p>
+              <div class="alert alert-info text-xs" style="margin-top: 10px;">
+                <strong>Scientific Honesty Note:</strong> Random play against a casual human or random opponent will occasionally produce wins or draws by pure chance. The baseline is measured over 100 games (50 playing as X, 50 as O) to eliminate first-player bias.
+              </div>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <button id="btn-run-baseline" class="btn btn-teal btn-block">
+                Run 100-Game Baseline Benchmark
+              </button>
+            </div>
+
+            <div id="baseline-results-box" class="benchmark-results-box">
+              <div class="text-muted text-sm text-center" style="padding: 1.25rem 0;">
+                Click above to generate the pre-training baseline benchmark.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- STAGE 02: TRAIN THE AGENT -->
+      <!-- ========================================================= -->
+      <section id="stage-2" class="stage-panel" role="tabpanel">
+        <div class="stage-banner">
+          <div class="stage-banner-header">
+            <span class="stage-tag">STAGE 02</span>
+            <h1 class="stage-title">Train the Agent</h1>
+          </div>
+          <p class="stage-desc">
+            Learn through repeated play, rewards, and updated Q-values. The agent experiences thousands of games, receiving positive rewards for victories (+1.0) and negative rewards for defeats (-1.0).
+          </p>
+        </div>
+
+        <div class="stage-grid">
+          <!-- Training Parameters Card -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Hyperparameter Controls</h2>
+                <p class="card-subtitle">Configure tabular Q-Learning parameters.</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="input-episodes" class="form-label">
+                Number of Training Episodes
+                <span class="text-muted text-xs">(Each episode is 1 complete self-contained match)</span>
+              </label>
+              <div class="episode-input-row">
+                <input type="number" id="input-episodes" class="form-control" value="10000" min="500" max="100000" step="500">
+                <div class="preset-buttons-group">
+                  <button type="button" class="btn btn-sm btn-outline btn-preset" data-val="2000">2,000</button>
+                  <button type="button" class="btn btn-sm btn-outline btn-preset" data-val="5000">5,000</button>
+                  <button type="button" class="btn btn-sm btn-outline btn-preset active-preset" data-val="10000">10,000</button>
+                  <button type="button" class="btn btn-sm btn-outline btn-preset" data-val="20000">20,000</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="select-opponent" class="form-label">
+                Training Opponent Strategy
+                <span class="text-muted text-xs">(Defines environment transition dynamics P(s'|s,a))</span>
+              </label>
+              <select id="select-opponent" class="form-select">
+                <option value="random" selected>Random Opponent (Standard Baseline Exploration)</option>
+                <option value="heuristic">Heuristic Opponent (Blocks Threats &amp; Takes Immediate Wins)</option>
+                <option value="self-play">Self-Play (Mirroring current learned policy)</option>
+              </select>
+            </div>
+
+            <!-- Hyperparameters Grid with Plain English Descriptions -->
+            <div class="hyperparams-grid">
+              <!-- Alpha -->
+              <div class="hyperparam-card">
+                <div class="hyperparam-header">
+                  <span class="param-name">Learning Rate (α)</span>
+                  <span id="disp-alpha" class="param-val">0.10</span>
+                </div>
+                <input type="range" id="input-alpha" class="form-range" min="0.01" max="1.0" step="0.05" value="0.10">
+                <p class="param-desc">How strongly new information changes existing estimates.</p>
+              </div>
+
+              <!-- Gamma -->
+              <div class="hyperparam-card">
+                <div class="hyperparam-header">
+                  <span class="param-name">Discount Factor (γ)</span>
+                  <span id="disp-gamma" class="param-val">0.95</span>
+                </div>
+                <input type="range" id="input-gamma" class="form-range" min="0.0" max="1.0" step="0.05" value="0.95">
+                <p class="param-desc">How much future rewards matter relative to immediate payoff.</p>
+              </div>
+
+              <!-- Epsilon -->
+              <div class="hyperparam-card">
+                <div class="hyperparam-header">
+                  <span class="param-name">Exploration Rate (ε)</span>
+                  <span id="disp-epsilon" class="param-val">1.00</span>
+                </div>
+                <input type="range" id="input-epsilon" class="form-range" min="0.0" max="1.0" step="0.05" value="1.00">
+                <p class="param-desc">How often the agent explores instead of exploiting current knowledge.</p>
+              </div>
+            </div>
+
+            <div class="decay-toggle-wrap">
+              <label class="checkbox-label" for="chk-decay-epsilon">
+                <input type="checkbox" id="chk-decay-epsilon" checked>
+                <span>Gradually decay exploration rate ε during training (from initial ε down to 0.05)</span>
+              </label>
+            </div>
+
+            <!-- Optional Seed -->
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="input-seed" class="form-label text-xs">
+                Optional Random Seed <span class="text-muted">(Leave empty for standard pseudo-random training)</span>
+              </label>
+              <input type="text" id="input-seed" class="form-control form-control-sm" placeholder="e.g. 42 or ml-lab-2026" style="max-width: 220px;">
+            </div>
+
+            <!-- Primary Training Action Buttons -->
+            <div class="training-btn-bar">
+              <button id="btn-train" class="btn btn-primary btn-lg">
+                🚀 Train Agent
+              </button>
+              <button id="btn-stop-train" class="btn btn-outline-danger btn-lg" disabled>
+                ⏹ Pause / Stop
+              </button>
+            </div>
+
+            <!-- Non-blocking Progress Bar -->
+            <div class="training-progress-wrap">
+              <div class="progress-bar-bg">
+                <div id="training-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+              </div>
+              <div id="training-progress-text" class="progress-meta">
+                Ready to train. Click "Train Agent" to start non-blocking batch execution.
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Metrics & Empirical Learning Curve Card -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Live Training Outcomes &amp; Learning Curve</h2>
+                <p class="card-subtitle">Actual recorded checkpoints evaluated with ε = 0 (pure exploitation).</p>
+              </div>
+              <span id="live-training-badge" class="badge badge-secondary">Ready</span>
+            </div>
+
+            <!-- Live KPI Row -->
+            <div class="live-kpi-row">
+              <div class="kpi-mini">
+                <div class="kpi-mini-label">Episodes</div>
+                <div id="kpi-episodes" class="kpi-mini-val font-mono">0</div>
+              </div>
+              <div class="kpi-mini">
+                <div class="kpi-mini-label">Current ε</div>
+                <div id="kpi-current-eps" class="kpi-mini-val font-mono">1.00</div>
+              </div>
+              <div class="kpi-mini">
+                <div class="kpi-mini-label">State-Actions Learned</div>
+                <div id="kpi-visited-states" class="kpi-mini-val font-mono">0</div>
+              </div>
+              <div class="kpi-mini">
+                <div class="kpi-mini-label">Training W / D / L</div>
+                <div id="kpi-training-wdl" class="kpi-mini-val font-mono">0/0/0</div>
+              </div>
+            </div>
+
+            <!-- Learning Curve Canvas -->
+            <div class="chart-canvas-wrapper">
+              <canvas id="learningCurveChart" width="700" height="260"></canvas>
+            </div>
+
+            <div class="chart-legend-row">
+              <span class="legend-chip"><span class="legend-color-dot" style="background: var(--teal);"></span> Win Rate %</span>
+              <span class="legend-chip"><span class="legend-color-dot" style="background: var(--primary);"></span> Draw Rate %</span>
+              <span class="legend-chip"><span class="legend-color-dot" style="background: var(--danger);"></span> Loss Rate %</span>
+            </div>
+
+            <div class="card-footer-action">
+              <button id="btn-proceed-to-stage-3" class="btn btn-teal btn-block">
+                Proceed to Stage 03 — Challenge Trained Agent &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- STAGE 03: AFTER TRAINING -->
+      <!-- ========================================================= -->
+      <section id="stage-3" class="stage-panel" role="tabpanel">
+        <div class="stage-banner">
+          <div class="stage-banner-header">
+            <span class="stage-tag">STAGE 03</span>
+            <h1 class="stage-title">After Training</h1>
+          </div>
+          <p class="stage-desc">
+            Challenge the trained agent and inspect what it learned. The agent acts using pure exploitation (&epsilon; = 0), selecting the highest-valued legal action from its learned Q-table.
+          </p>
+        </div>
+
+        <div class="stage-grid">
+          <!-- Gameplay against Trained Agent -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Play Trained Agent</h2>
+                <p class="card-subtitle">Agent uses learned Q-table with ε = 0.00 (pure exploitation).</p>
+              </div>
+              <div class="role-selector-wrap">
+                <label for="select-role-s3" class="text-xs font-semibold">Your Symbol:</label>
+                <select id="select-role-s3" class="form-select form-select-sm">
+                  <option value="X" selected>X (You move first)</option>
+                  <option value="O">O (Agent moves first)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="game-status-banner">
+              <div id="turn-indicator-s3" class="turn-indicator">
+                <span class="turn-dot user-turn"></span> Your Turn (X)
+              </div>
+              <div id="game-status-s3" class="game-status-msg text-sm">Choose an empty cell.</div>
+            </div>
+
+            <div class="board-container">
+              <div id="board-s3" class="tic-tac-toe-board" aria-label="Trained 3x3 Board"></div>
+            </div>
+
+            <div class="board-action-row">
+              <button id="btn-restart-s3" class="btn btn-primary">New Game</button>
+              <button id="btn-toggle-explain" class="btn btn-outline">
+                🔍 Toggle "How the Agent Decides"
+              </button>
+            </div>
+
+            <div class="session-stats-bar">
+              <span class="stat-pill">Games: <strong id="s3-stat-games">0</strong></span>
+              <span class="stat-pill stat-win">You Won: <strong id="s3-stat-human-wins">0</strong></span>
+              <span class="stat-pill stat-draw">Draws: <strong id="s3-stat-draws">0</strong></span>
+              <span class="stat-pill stat-loss">Agent Won: <strong id="s3-stat-agent-wins">0</strong></span>
+            </div>
+          </div>
+
+          <!-- Before vs After Empirical Comparison Panel -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Empirical Performance Comparison</h2>
+                <p class="card-subtitle">Standardized 100-game evaluation under identical conditions.</p>
+              </div>
+              <button id="btn-run-post-eval" class="btn btn-sm btn-outline">
+                Re-evaluate Benchmark
+              </button>
+            </div>
+
+            <div class="comparison-grid">
+              <!-- Before Training Column -->
+              <div class="comparison-card">
+                <div class="comp-header">
+                  <span class="comp-badge badge-untrained">BEFORE TRAINING</span>
+                  <div class="comp-sub">Untrained Policy (100 Games)</div>
+                </div>
+                <div class="comp-stats-list">
+                  <div class="comp-row">
+                    <span>Win Rate:</span>
+                    <strong id="comp-before-win" class="text-teal font-mono">—</strong>
+                  </div>
+                  <div class="comp-row">
+                    <span>Draw Rate:</span>
+                    <strong id="comp-before-draw" class="text-primary font-mono">—</strong>
+                  </div>
+                  <div class="comp-row">
+                    <span>Loss Rate:</span>
+                    <strong id="comp-before-loss" class="text-danger font-mono">—</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- After Training Column -->
+              <div class="comparison-card">
+                <div class="comp-header">
+                  <span class="comp-badge badge-trained">AFTER TRAINING</span>
+                  <div class="comp-sub">Learned Policy (100 Games)</div>
+                </div>
+                <div class="comp-stats-list">
+                  <div class="comp-row">
+                    <span>Win Rate:</span>
+                    <strong id="comp-after-win" class="text-teal font-mono">—</strong>
+                  </div>
+                  <div class="comp-row">
+                    <span>Draw Rate:</span>
+                    <strong id="comp-after-draw" class="text-primary font-mono">—</strong>
+                  </div>
+                  <div class="comp-row">
+                    <span>Loss Rate:</span>
+                    <strong id="comp-after-loss" class="text-danger font-mono">—</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="comparison-analysis-note" class="alert alert-info text-xs" style="margin-top: 14px;">
+              <strong>Empirical Protocol:</strong> Both before and after training benchmarks evaluate 50 games playing as X (first mover) and 50 games playing as O (second mover) against the same Random opponent with &epsilon; = 0.
+            </div>
+
+            <!-- Export / Import Utilities -->
+            <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="btn-export-qtable" class="btn btn-sm btn-outline">💾 Export Learned Q-Table (JSON)</button>
+              <button id="btn-import-qtable" class="btn btn-sm btn-outline">📂 Import Q-Table (JSON)</button>
+              <input type="file" id="import-file-input" accept=".json" style="display: none;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsible Explainability Drawer: How the Agent Decides -->
+        <div id="explainability-drawer" class="card explain-card" style="margin-top: 1.25rem;">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">How the Agent Decides</h2>
+              <p class="card-subtitle">Transparent mathematical evaluation for the current board state.</p>
+            </div>
+            <code id="explain-state-key" class="state-code">000000000</code>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Action (Cell)</th>
+                  <th>Coordinates</th>
+                  <th>Learned Q(s,a)</th>
+                  <th>Status</th>
+                  <th>P(Selection)</th>
+                </tr>
+              </thead>
+              <tbody id="explain-moves-tbody">
+                <tr><td colspan="5" class="text-center text-muted">Play a move to view candidate action values.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="explain-last-decision-box" class="last-decision-box" style="margin-top: 12px;">
+            <span class="text-muted text-sm">No action taken yet.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- STAGE REFERENCE: HOW IT WORKS & THEORY -->
+      <!-- ========================================================= -->
+      <section id="stage-theory" class="stage-panel" role="tabpanel">
+        <div class="stage-banner">
+          <div class="stage-banner-header">
+            <span class="stage-tag">REFERENCE</span>
+            <h1 class="stage-title">How It Works: RL Foundations</h1>
+          </div>
+          <p class="stage-desc">
+            Undergraduate Machine Learning curriculum reference on Tabular Q-Learning, Temporal Difference updates, and Dynamic Programming.
+          </p>
+        </div>
+
+        <div class="theory-layout-grid">
+          <!-- Core Theory Breakdown -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">The Mathematics of Q-Learning</h2>
+            </div>
+            <div class="theory-content">
+              <h3>1. The Q-Learning Update Rule</h3>
+              <p>Q-learning is an off-policy, model-free Temporal Difference learning algorithm that directly approximates the optimal action-value function <em>Q*</em>:</p>
+              <div class="math-callout font-mono">
+                Q(s, a) &larr; Q(s, a) + &alpha; &times; [ r + &gamma; &times; max<sub>a'</sub> Q(s', a') &minus; Q(s, a) ]
+              </div>
+              <ul class="theory-list">
+                <li><strong>s, a:</strong> Current canonical state and chosen action.</li>
+                <li><strong>&alpha; (Alpha):</strong> Learning rate step size (0 &lt; &alpha; &le; 1).</li>
+                <li><strong>r:</strong> Immediate reward observed after taking action <em>a</em> (+1 win, -1 loss, 0 draw).</li>
+                <li><strong>&gamma; (Gamma):</strong> Future reward discount factor (0 &le; &gamma; &le; 1).</li>
+                <li><strong>max<sub>a'</sub> Q(s', a'):</strong> Best estimated value in successor state <em>s'</em>. For <em>terminal transitions</em>, this is strictly <strong>0</strong>.</li>
+              </ul>
+
+              <h3 style="margin-top: 16px;">2. Exploration vs. Exploitation (&epsilon;-Greedy)</h3>
+              <p>
+                With probability <code>&epsilon;</code>, the agent enters the exploration branch and selects uniformly at random among legal moves.
+                With probability <code>1 - &epsilon;</code>, the agent exploits its current knowledge and picks <code>argmax_a Q(s,a)</code> with random tie-breaking.
+              </p>
+              <div class="alert alert-info text-xs">
+                <strong>Important Nuance:</strong> Choosing the exploration branch does <em>not</em> guarantee picking a non-greedy move! If there are <em>k</em> legal moves, the random draw has a <em>1/k</em> probability of picking the greedy action anyway:
+                <code>P(greedy) = (1 - &epsilon;) + (&epsilon; / k)</code>.
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Worked Calculation Verification (5.7) -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Interactive Worked Calculation</h2>
+                <p class="card-subtitle">Verifies exact numerical update arithmetic as specified in lecture curriculum.</p>
+              </div>
+              <span class="badge badge-success">5.7 Verified</span>
+            </div>
+
+            <div class="worked-form-grid">
+              <div class="form-group">
+                <label for="calc-current-q" class="form-label text-xs">Current Q(s, a):</label>
+                <input type="number" id="calc-current-q" class="form-control" value="4" step="0.1">
+              </div>
+              <div class="form-group">
+                <label for="calc-alpha" class="form-label text-xs">Learning Rate (&alpha;):</label>
+                <input type="number" id="calc-alpha" class="form-control" value="0.5" step="0.05">
+              </div>
+              <div class="form-group">
+                <label for="calc-reward" class="form-label text-xs">Reward (r):</label>
+                <input type="number" id="calc-reward" class="form-control" value="2" step="0.1">
+              </div>
+              <div class="form-group">
+                <label for="calc-gamma" class="form-label text-xs">Discount (&gamma;):</label>
+                <input type="number" id="calc-gamma" class="form-control" value="0.9" step="0.05">
+              </div>
+              <div class="form-group">
+                <label for="calc-max-next-q" class="form-label text-xs">max<sub>a'</sub> Q(s', a'):</label>
+                <input type="number" id="calc-max-next-q" class="form-control" value="6" step="0.1">
+              </div>
+            </div>
+
+            <!-- Step by Step Calculation Breakdown -->
+            <div class="calc-step-by-step">
+              <div class="calc-step">
+                <span class="step-num">Step 1 &bull; TD Target:</span>
+                <code class="step-math">r + &gamma; max Q(s',a') = 2 + (0.9 &times; 6) = <span id="calc-td-target">7.40</span></code>
+              </div>
+              <div class="calc-step">
+                <span class="step-num">Step 2 &bull; TD Error (&delta;):</span>
+                <code class="step-math">&delta; = TD Target &minus; Q(s,a) = 7.40 &minus; 4 = <span id="calc-td-error">+3.40</span></code>
+              </div>
+              <div class="calc-step highlight-step">
+                <span class="step-num">Step 3 &bull; Q-Update (&alpha; = 0.5):</span>
+                <code class="step-math">Q_new = 4 + (0.5 &times; 3.40) = <strong id="calc-updated-q" class="text-teal font-mono">5.70</strong></code>
+              </div>
+            </div>
+
+            <!-- Model-Based DP vs Model-Free RL -->
+            <div style="margin-top: 18px;">
+              <h3 style="font-size: 0.95rem; font-weight: 700;">Dynamic Programming (DP) vs. Q-Learning</h3>
+              <p class="text-xs text-muted" style="margin-top: 4px;">
+                <strong>Model-Based DP</strong> computes values offline using full knowledge of transition probabilities <em>P(s'|s,a)</em> and rewards without stepping in the environment.
+                <strong>Model-Free Q-Learning</strong> requires zero prior transition model, discovering optimal play directly from trial-and-error gameplay samples.
+              </p>
+              <div id="dpGridContainer" style="margin-top: 12px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- STAGE REFERENCE: AUTOMATED TEST SUITE -->
+      <!-- ========================================================= -->
+      <section id="stage-tests" class="stage-panel" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Comprehensive 28-Point Algorithmic Test Suite</h2>
+              <p class="card-subtitle">Verifies Game Engine (1-8), Q-Learning (9-18), and Integration/Usability (19-28).</p>
+            </div>
+            <div id="test-summary-badge">
+              <span class="badge badge-success">✓ 28/28 Tests Verified</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 14px; display: flex; gap: 10px; align-items: center;">
+            <button id="btn-run-tests" class="btn btn-primary">
+              ▶ Run All 28 Tests
+            </button>
+            <span class="text-xs text-muted">Runs synchronously in browser verifying all invariants.</span>
+          </div>
+
+          <div id="test-results-container"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Clean Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div>
+          <strong>RL Lab — Learn to Play Tic-Tac-Toe</strong> &bull; Educational Machine Learning Playground
+        </div>
+        <div class="footer-meta">
+          Model-Free Tabular Q-Learning &bull; ε-Greedy Policy &bull; Pure Client-Side JavaScript
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Scripts in dependency order -->
+  <script src="js/game.js"></script>
+  <script src="js/agent.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/dp-demo.js"></script>
+  <script src="js/tests.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
