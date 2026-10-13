@@ -68,7 +68,7 @@
             📖 How It Works
           </button>
           <button class="stage-tab" data-stage="stage-tests" role="tab" aria-selected="false" aria-controls="stage-tests">
-            🧪 Test Suite (28)
+            🧪 Test Suite
           </button>
         </div>
       </nav>
@@ -108,7 +108,7 @@
               </div>
             </div>
 
-            <div class="game-status-banner">
+            <div class="game-status-banner" aria-live="polite" aria-atomic="true">
               <div id="turn-indicator-s1" class="turn-indicator">
                 <span class="turn-dot user-turn"></span> Your Turn (X)
               </div>
@@ -212,8 +212,9 @@
                 <span class="text-muted text-xs">(Defines environment transition dynamics P(s'|s,a))</span>
               </label>
               <select id="select-opponent" class="form-select">
-                <option value="random" selected>Random Opponent (Standard Baseline Exploration)</option>
-                <option value="heuristic">Heuristic Opponent (Blocks Threats &amp; Takes Immediate Wins)</option>
+                <option value="balanced" selected>Balanced Curriculum (Recommended: 60% Exploration + 40% Tactical Defense)</option>
+                <option value="random">Random Opponent (Uniform Random Legal Actions)</option>
+                <option value="heuristic">Heuristic Opponent (Tactical Blocks &amp; Immediate Wins)</option>
                 <option value="self-play">Self-Play (Mirroring current learned policy)</option>
               </select>
             </div>
@@ -368,7 +369,7 @@
               </div>
             </div>
 
-            <div class="game-status-banner">
+            <div class="game-status-banner" aria-live="polite" aria-atomic="true">
               <div id="turn-indicator-s3" class="turn-indicator">
                 <span class="turn-dot user-turn"></span> Your Turn (X)
               </div>
@@ -381,7 +382,7 @@
 
             <div class="board-action-row">
               <button id="btn-restart-s3" class="btn btn-primary">New Game</button>
-              <button id="btn-toggle-explain" class="btn btn-outline">
+              <button id="btn-toggle-explain" class="btn btn-outline" aria-expanded="true" aria-controls="explainability-drawer">
                 🔍 Toggle "How the Agent Decides"
               </button>
             </div>
@@ -412,6 +413,7 @@
                 <div class="comp-header">
                   <span class="comp-badge badge-untrained">BEFORE TRAINING</span>
                   <div class="comp-sub">Untrained Policy (100 Games)</div>
+                  <div id="comp-before-opp" class="text-xs text-muted" style="margin-top: 3px;">Opponent: Random (50 as X, 50 as O)</div>
                 </div>
                 <div class="comp-stats-list">
                   <div class="comp-row">
@@ -434,6 +436,7 @@
                 <div class="comp-header">
                   <span class="comp-badge badge-trained">AFTER TRAINING</span>
                   <div class="comp-sub">Learned Policy (100 Games)</div>
+                  <div id="comp-after-opp" class="text-xs text-muted" style="margin-top: 3px;">Opponent: Random (50 as X, 50 as O)</div>
                 </div>
                 <div class="comp-stats-list">
                   <div class="comp-row">
@@ -613,17 +616,17 @@
         <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title">Comprehensive 28-Point Algorithmic Test Suite</h2>
-              <p class="card-subtitle">Verifies Game Engine (1-8), Q-Learning (9-18), and Integration/Usability (19-28).</p>
+              <h2 class="card-title">Comprehensive Algorithmic Test Suite</h2>
+              <p class="card-subtitle">Complete validation of Game Engine, Tabular Q-Learning Invariants, Lifecycle Safety, and Persistence.</p>
             </div>
             <div id="test-summary-badge">
-              <span class="badge badge-success">✓ 28/28 Tests Verified</span>
+              <span class="badge badge-success">Running verification...</span>
             </div>
           </div>
 
           <div style="margin-bottom: 14px; display: flex; gap: 10px; align-items: center;">
             <button id="btn-run-tests" class="btn btn-primary">
-              ▶ Run All 28 Tests
+              ▶ Run All Invariant Tests
             </button>
             <span class="text-xs text-muted">Runs synchronously in browser verifying all invariants.</span>
           </div>

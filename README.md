@@ -173,51 +173,58 @@ The project includes an automated test suite verifying **28 critical invariants*
 Open `test-runner.html` or open `index.html` and click the **"🧪 Test Suite (28)"** tab.
 
 #### From the Terminal
+The test suite exercises the actual JavaScript codebase directly:
 ```bash
+# Direct JavaScript execution (Node.js)
+node run_node_tests.js
+
+# Or via Python automation runner (locates Node.js and executes JS suite)
 python run_tests.py
 ```
 **Output:**
-```
+```text
 =======================================================
-RL Lab — Full 28-Point Invariant Test Suite
+RL Lab — JavaScript Test Suite (Node.js Engine)
+Running on Node.js: v24.13.1
 =======================================================
 
--- Game Engine Invariants --
-  [PASS] Test 1: Empty-Board Initialization: Initializes to 9 empty cells
-  [PASS] Test 2: Legal-Action Generation: Identifies empty cells [1, 3, 5, 6, 7]
-  [PASS] Test 3: Rejection of Occupied Cell: Attempt to place on occupied cell 0 rejected
-  [PASS] Test 4: All Eight Winning Lines: All 3 rows, 3 cols, and 2 diagonals detected correctly
-  [PASS] Test 5: Draw Detection: Full non-winning board is terminal draw
-  [PASS] Test 6: Terminal-State Protection: Terminal state halts further play
-  [PASS] Test 7: Full-Board Behavior: Full board yields 0 legal actions
-  [PASS] Test 8: Turn Progression: Sequential turns apply correctly
-
--- Q-Learning Algorithm Invariants --
-  [PASS] Test 9: Numerical Q-Update Formula: 4 + 0.5 * [2 + 0.9*6 - 4] = 5.7 (Expected 5.7)
-  [PASS] Test 10: Terminal State Target Zeroed: Terminal transition targets reward only: 3.0 (Expected 3.0)
+  [PASS] Test 1: Empty-Board Initialization: Board initializes to 9 empty cells
+  [PASS] Test 2: Legal-Action Generation: Returns exactly empty cells [1, 3, 5, 6, 7]
+  [PASS] Test 3: Rejection of Occupied Cell: Attempt to play on cell 0 returns null
+  [PASS] Test 4: All Eight Winning Lines: Accurately detects all 3 rows, 3 columns, and 2 diagonals
+  [PASS] Test 5: Draw Detection: Full non-winning board detected as terminal draw
+  [PASS] Test 6: Terminal-State Flag: Terminal state flagged immediately to halt subsequent moves
+  [PASS] Test 7: Full-Board Behavior: Full board returns 0 legal moves
+  [PASS] Test 8: Turn Progression: Moves for alternating players apply sequentially
+  [PASS] Test 9: Numerical Q-Update Formula: 4 + 0.5 * [2 + 0.9 * 6 - 4] equals exactly 5.7 (Actual: 5.7, Expected: 5.7)
+  [PASS] Test 10: Terminal State Target Zeroed: Terminal transition zeroes future state value (yields 3.0) (Actual: 3, Expected: 3)
   [PASS] Test 11: Reward Signs Consistency: Win is +1.0, Loss is -1.0, Draw is 0.0
-  [PASS] Test 12: Next-State Handling: Bootstrapping correctly yields 2.25 (Expected 2.25)
-  [PASS] Test 13: Legal-Action Filtering in Agent: Agent only selects from empty cells [7, 8]
-  [PASS] Test 14: Epsilon = 0 Greedy Exploitation: Greedy action strictly selects highest Q-value (cell 2)
-  [PASS] Test 15: Epsilon = 1 Random Exploration: Epsilon=1.0 assigns 100% probability to exploration branch
-  [PASS] Test 16: Tied Q-Values Tie Breaking: Identifies both maximal candidates [0, 8] for uniform tie-breaking
-  [PASS] Test 17: Persistence Between Games: Q-table preserved across subsequent games
-  [PASS] Test 18: Separation of Train & Eval: Evaluation runs do not pollute training episode counts
-
--- Integration and Usability Invariants --
-  [PASS] Test 19: Complete Game Finishes: Simulated game finishes in 7 moves
-  [PASS] Test 20: AI Move Always Legal: Selected move is an empty cell
-  [PASS] Test 21: Knowledge Growth: Training updates actual visited state-action entries
-  [PASS] Test 22: Training Chunking: Episodes divide into non-blocking responsive batches
-  [PASS] Test 23: Evaluation Does Not Mutate Q-Values: Evaluation leaves Q-table strictly unmodified
-  [PASS] Test 24: Board Reset Preserves Learning: Board resets do not wipe learned Q-table
-  [PASS] Test 25: Resetting Policy Clears Learning: Explicit reset clears Q-table to 0 entries
+  [PASS] Test 12: Next-State Handling: Bootstraps from max Q(s', a') in successor state (Actual: 2.25, Expected: 2.25)
+  [PASS] Test 13: Agent Legal-Action Filtering: Agent only selects from empty cells (7 or 8)
+  [PASS] Test 14: ε = 0 Greedy Exploitation: 100% exploitation branch when ε = 0
+  [PASS] Test 15: ε = 1 Random Exploration: 100% exploration branch when ε = 1
+  [PASS] Test 16: Tied Q-Values Random Resolution: Ties between maximal actions break randomly
+  [PASS] Test 17: Persistence Between Games: Q-table values persist between matches without silent deletion
+  [PASS] Test 18: Separation of Train & Eval: Evaluation does not increment training episode count
+  [PASS] Test 19: Complete Game Finishes: Game reaches terminal state within 9 moves
+  [PASS] Test 20: AI Move Always Legal: Agent selections never choose occupied squares
+  [PASS] Test 21.1: Initially Zero Visited States: New agent has 0 visited state-action pairs
+  [PASS] Test 21.2: Knowledge Growth: Training updates actual visited states and Q-table entries
+  [PASS] Test 22: Async Training Function Exists: Asynchronous chunked training interface exists
+  [PASS] Test 23: Evaluation Does Not Mutate Q-Values: Evaluation policy execution leaves Q-values completely unchanged
+  [PASS] Test 24: Board Reset Preserves Learning: Resetting game board does not wipe learned Q-table
+  [PASS] Test 25: Resetting Policy Clears Learning: Explicit resetPolicy empties Q-table and zeroes episode count
   [PASS] Test 26: Parameter Modification: Hyperparameters update dynamically
-  [PASS] Test 27: Canonical State Encoding: Perspective invariance correctly maps marks
-  [PASS] Test 28: Empty Analytics State: Initial state contains zero fabricated checkpoints
+  [PASS] Test 27: Canonical Perspective Invariance: Encodes perspective consistently for both X and O
+  [PASS] Test 28: Empty Analytics State: Initial state contains 0 episodes and empty evaluation history
+  [PASS] Test 29: Read-Only Safety: Inspecting states and greedy action selection never add phantom entries to Q-table
+  [PASS] Test 30: Export/Import Fidelity & Validation: Policy JSON preserves exact visited action set (including Q=0) and safely rejects malformed payloads
+  [PASS] Test 31: Training Lifecycle & Safe Reset: Active asynchronous training transitions through states and cancels cleanly on reset
+  [PASS] Test 32: Balanced Opponent Curriculum: Balanced training strategy generates strictly valid actions from curriculum distribution
+  [PASS] Test 33: Epsilon Decay Schedule Synchronization: Training engine snapshots current exploration slider setting as starting epsilon
 
 =======================================================
-ALL 28/28 TESTS PASSED CLEANLY (100% SUCCESS)!
+ALL 34/34 JAVASCRIPT INVARIANTS PASSED (100% SUCCESS)!
 =======================================================
 ```
 

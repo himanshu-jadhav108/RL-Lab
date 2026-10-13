@@ -6,6 +6,14 @@
  *          including the exact numerical update verification (4 -> 5.7).
  */
 
+// Node.js environment resolution fallback
+if (typeof TicTacToeGame === 'undefined' && typeof require !== 'undefined') {
+  try { global.TicTacToeGame = require('./game.js').TicTacToeGame; } catch (e) {}
+}
+if (typeof QLearningAgent === 'undefined' && typeof require !== 'undefined') {
+  try { global.QLearningAgent = require('./agent.js').QLearningAgent; } catch (e) {}
+}
+
 class RLTestSuite {
   constructor() {
     this.results = [];
@@ -72,6 +80,11 @@ class RLTestSuite {
     this.test26_ChangingTrainingParametersAffectsTraining();
     this.test27_CanonicalStateRepresentation();
     this.test28_EmptyAnalyticsStatesDoNotDisplayFakeData();
+    this.test29_ReadOnlyInspectionDoesNotMutateQTable();
+    this.test30_ExportImportFidelityAndValidation();
+    this.test31_TrainingLifecycleAndSafeReset();
+    this.test32_BalancedOpponentCurriculum();
+    this.test33_ConfigurableEpsilonDecaySchedule();
 
     const passedCount = this.results.filter(r => r.passed).length;
     const totalCount = this.results.length;
@@ -409,6 +422,110 @@ class RLTestSuite {
     const agent = new QLearningAgent();
     this.assert(agent.evaluationHistory.length === 0 && agent.totalEpisodesTrained === 0,
       'Test 28: Empty Analytics State', 'Initial state contains 0 episodes and empty evaluation history');
+  }
+
+  // 29. Read-only inspection does not mutate Q-table
+  test29_ReadOnlyInspectionDoesNotMutateQTable() {
+    const agent = new QLearningAgent();
+    const game = new TicTacToeGame();
+    const initialSize = agent.qTable.size;
+
+    // Inspect an unseen state via peekQValues and getQValueInfo
+    const unvisitedState = '012012000';
+    const vals = agent.peekQValues(unvisitedState);
+    const info = agent.getQValueInfo(unvisitedState, 0);
+
+    // Call selectAction on untrained board
+    const board = game.reset();
+    agent.selectAction(board, 'X', 0.0);
+
+    const afterSize = agent.qTable.size;
+    this.assert(initialSize === 0 && afterSize === 0, 'Test 29: Read-Only Safety', 'Inspecting states and greedy action selection never add phantom entries to Q-table');
+  }
+
+  // 30. Policy export/import fidelity and validation
+  test30_ExportImportFidelityAndValidation() {
+    const agent1 = new QLearningAgent();
+    for (let i = 0; i < 15; i++) agent1.trainEpisode('X', 'random');
+
+    // Explicitly add a visited action that has Q = 0.0 (e.g. draw result)
+    const testKey = '200010000';
+    agent1.updateQ(testKey, 1, 0.0, null, [], true);
+    const expectedVisitedCount = agent1.getVisitedCount();
+
+    const json = agent1.exportPolicyJson();
+    const parsed = JSON.parse(json);
+    const hasVisitedList = Array.isArray(parsed.visitedActions) && parsed.visitedActions.includes(`${testKey}:1`);
+
+    const agent2 = new QLearningAgent();
+    const importOk = agent2.importPolicyJson(json);
+    const roundtripFidelity = importOk &&
+      agent2.qTable.size === agent1.qTable.size &&
+      agent2.getVisitedCount() === expectedVisitedCount &&
+      agent2.hasVisited(testKey, 1);
+
+    // Test malformed payload rejection
+    const badJson = '{"version":"2.1", "qTable": {"state": [1, 2]}}'; // invalid array length (2 != 9)
+    const badImportResult = agent2.importPolicyJson(badJson);
+
+    this.assert(hasVisitedList && roundtripFidelity && badImportResult === false,
+      'Test 30: Export/Import Fidelity & Validation',
+      'Policy JSON preserves exact visited action set (including Q=0) and safely rejects malformed payloads');
+  }
+
+  // 31. Training lifecycle state & safe reset
+  test31_TrainingLifecycleAndSafeReset() {
+    const agent = new QLearningAgent();
+    agent.trainAsync(5000, 'random');
+    const wasTraining = agent.isTraining && agent.trainingState === 'training';
+
+    // Safely interrupt active training with immediate reset
+    agent.resetPolicy();
+    const safeAfterReset = !agent.isTraining &&
+      agent.trainingState === 'idle' &&
+      agent.trainingTimerId === null &&
+      agent.baselineEval === null &&
+      agent.postTrainingEval === null &&
+      agent.qTable.size === 0;
+
+    this.assert(wasTraining && safeAfterReset,
+      'Test 31: Training Lifecycle & Safe Reset',
+      'Active asynchronous training transitions through states and cancels cleanly on reset');
+  }
+
+  // 32. Balanced opponent curriculum
+  test32_BalancedOpponentCurriculum() {
+    const game = new TicTacToeGame();
+    const agent = new QLearningAgent({ game });
+
+    // Test that balanced opponent returns legal actions and handles mixed strategies
+    const board = ['X', 'X', ' ', 'O', ' ', ' ', ' ', ' ', ' '];
+    let allLegal = true;
+    for (let i = 0; i < 30; i++) {
+      const move = agent.selectOpponentAction(board, 'X', 'balanced');
+      if (!game.isLegal(move, board)) {
+        allLegal = false;
+        break;
+      }
+    }
+
+    this.assert(allLegal,
+      'Test 32: Balanced Opponent Curriculum',
+      'Balanced training strategy generates strictly valid actions from curriculum distribution');
+  }
+
+  // 33. Configurable epsilon decay schedule
+  test33_ConfigurableEpsilonDecaySchedule() {
+    const agent = new QLearningAgent({ epsilon: 0.8, minEpsilon: 0.1 });
+    agent.epsilon = 0.5; // Modified via slider
+    agent.trainAsync(50, 'random');
+    // Ensure initialEpsilon snapshotted to 0.5
+    const snapshotted = agent.initialEpsilon === 0.5;
+    agent.stopTraining();
+
+    this.assert(snapshotted,
+      'Test 33: Epsilon Decay Schedule Synchronization',
+      'Training engine snapshots current exploration slider setting as starting epsilon');
   }
 }
 

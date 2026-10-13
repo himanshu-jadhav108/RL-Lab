@@ -91,6 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const compAfterWin = document.getElementById('comp-after-win');
   const compAfterDraw = document.getElementById('comp-after-draw');
   const compAfterLoss = document.getElementById('comp-after-loss');
+  const compBeforeOpp = document.getElementById('comp-before-opp');
+  const compAfterOpp = document.getElementById('comp-after-opp');
   const explainabilityDrawer = document.getElementById('explainability-drawer');
   const explainStateKey = document.getElementById('explain-state-key');
   const explainMovesTbody = document.getElementById('explain-moves-tbody');
@@ -394,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
     agent.alpha = parseFloat(inputAlpha.value);
     agent.gamma = parseFloat(inputGamma.value);
     agent.epsilon = parseFloat(inputEpsilon.value);
+    agent.initialEpsilon = agent.epsilon;
     agent.decayEpsilon = chkDecayEpsilon.checked;
 
     dispAlpha.textContent = agent.alpha.toFixed(2);
@@ -469,6 +472,15 @@ document.addEventListener('DOMContentLoaded', () => {
     btnStopTrain.disabled = !isTraining;
     inputEpisodes.disabled = isTraining;
     selectOpponent.disabled = isTraining;
+    inputAlpha.disabled = isTraining;
+    inputGamma.disabled = isTraining;
+    inputEpsilon.disabled = isTraining;
+    chkDecayEpsilon.disabled = isTraining;
+    if (btnRunBaseline) btnRunBaseline.disabled = isTraining;
+    if (btnRunPostEval) btnRunPostEval.disabled = isTraining;
+    if (btnGlobalReset) btnGlobalReset.disabled = isTraining;
+    if (btnExportQTable) btnExportQTable.disabled = isTraining;
+    if (btnImportQTable) btnImportQTable.disabled = isTraining;
 
     if (isTraining) {
       liveTrainingBadge.textContent = 'Training in progress...';
@@ -499,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
     boardElS3.innerHTML = '';
 
     const canonicalState = game.getCanonicalState(boardStateS3, agentRoleS3);
-    const qValues = agent.getQValues(canonicalState);
+    const qValues = agent.peekQValues(canonicalState);
     const legalMoves = game.getLegalMoves(boardStateS3);
 
     // Identify maximal Q among legal moves
@@ -658,6 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnToggleExplain.addEventListener('click', () => {
     explainOpen = !explainOpen;
     explainabilityDrawer.style.display = explainOpen ? 'block' : 'none';
+    btnToggleExplain.setAttribute('aria-expanded', explainOpen ? 'true' : 'false');
   });
 
   // Explainability Drawer Logic
@@ -672,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const qVals = agent.getQValues(canonical);
+    const qVals = agent.peekQValues(canonical);
     let maxQ = -Infinity;
     legal.forEach(a => {
       if (qVals[a] > maxQ) maxQ = qVals[a];
@@ -717,11 +730,29 @@ document.addEventListener('DOMContentLoaded', () => {
       compBeforeWin.textContent = `${agent.baselineEval.winRate}%`;
       compBeforeDraw.textContent = `${agent.baselineEval.drawRate}%`;
       compBeforeLoss.textContent = `${agent.baselineEval.lossRate}%`;
+      if (compBeforeOpp) {
+        const oppName = agent.baselineEval.opponentPolicy || 'random';
+        compBeforeOpp.textContent = `Opponent: ${oppName.toUpperCase()} (50 as X, 50 as O)`;
+      }
+    } else {
+      compBeforeWin.textContent = '—';
+      compBeforeDraw.textContent = '—';
+      compBeforeLoss.textContent = '—';
+      if (compBeforeOpp) compBeforeOpp.textContent = 'Awaiting baseline run...';
     }
     if (agent.postTrainingEval) {
       compAfterWin.textContent = `${agent.postTrainingEval.winRate}%`;
       compAfterDraw.textContent = `${agent.postTrainingEval.drawRate}%`;
       compAfterLoss.textContent = `${agent.postTrainingEval.lossRate}%`;
+      if (compAfterOpp) {
+        const oppName = agent.postTrainingEval.opponentPolicy || selectOpponent.value;
+        compAfterOpp.textContent = `Opponent: ${oppName.toUpperCase()} (50 as X, 50 as O)`;
+      }
+    } else {
+      compAfterWin.textContent = '—';
+      compAfterDraw.textContent = '—';
+      compAfterLoss.textContent = '—';
+      if (compAfterOpp) compAfterOpp.textContent = 'Awaiting post-training evaluation...';
     }
   }
 
@@ -782,12 +813,20 @@ document.addEventListener('DOMContentLoaded', () => {
       analytics.clear();
       updateAgentStatus();
       updateComparisonDisplay();
+      if (baselineResultsBox) {
+        baselineResultsBox.innerHTML = `
+          <div class="text-muted text-sm text-center" style="padding: 1.25rem 0;">
+            Click above to generate the pre-training baseline benchmark.
+          </div>
+        `;
+      }
       restartGameS1();
       restartGameS3();
       progressBar.style.width = '0%';
       progressText.textContent = 'Agent policy reset to untrained baseline.';
       kpiEpisodes.textContent = '0';
       kpiVisitedStates.textContent = '0';
+      kpiCurrentEps.textContent = agent.epsilon.toFixed(2);
       kpiTrainingWdl.textContent = '0/0/0';
       playTone(320, 0.1);
     }

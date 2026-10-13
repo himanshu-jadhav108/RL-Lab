@@ -26,9 +26,11 @@ class QLearningAgent {
     // Seeded PRNG state (null for Math.random)
     this.prngSeed = null;
 
-    // Training state
+    // Training state lifecycle
     this.isTraining = false;
     this.shouldStopTraining = false;
+    this.trainingState = 'idle'; // 'idle' | 'training' | 'stopping'
+    this.trainingTimerId = null;
     this.totalEpisodesTrained = 0;
 
     // Cumulative training outcomes (during exploration)
@@ -80,18 +82,35 @@ class QLearningAgent {
   }
 
   /**
-   * Reset learned Q-table, visited tracking, and training history.
+   * Reset learned Q-table, visited tracking, and training history safely.
    */
   resetPolicy() {
+    this.stopTraining();
+    this.isTraining = false;
+    this.trainingState = 'idle';
     this.qTable.clear();
     this.visitedActions.clear();
     this.totalEpisodesTrained = 0;
     this.epsilon = this.initialEpsilon;
     this.trainingStats = { wins: 0, draws: 0, losses: 0, episodes: 0 };
     this.evaluationHistory = [];
+    this.baselineEval = null;
     this.postTrainingEval = null;
     this.lastDecision = null;
     this.lastUpdate = null;
+  }
+
+  /**
+   * Non-mutating read-only lookup of Q-values.
+   * Returns existing entry or a zero array WITHOUT adding to qTable.
+   * @param {string} stateKey
+   * @returns {number[]} Array of 9 Q-values
+   */
+  peekQValues(stateKey) {
+    if (this.qTable.has(stateKey)) {
+      return this.qTable.get(stateKey);
+    }
+    return new Array(9).fill(this.defaultQ);
   }
 
   /**
@@ -114,11 +133,11 @@ class QLearningAgent {
   }
 
   /**
-   * Get value and visited status for inspector.
+   * Get value and visited status for inspector without mutating Q-table.
    */
   getQValueInfo(stateKey, action) {
     const visited = this.hasVisited(stateKey, action);
-    const qValues = this.getQValues(stateKey);
+    const qValues = this.peekQValues(stateKey);
     return {
       value: qValues[action],
       visited: visited
@@ -145,15 +164,18 @@ class QLearningAgent {
   }
 
   /**
-   * Perform in-place Q-value update.
+   * Perform in-place Q-value update. Only current state is added to qTable.
    */
   updateQ(stateKey, action, reward, nextStateKey, nextLegalMoves, isTerminal) {
-    const qValues = this.getQValues(stateKey);
+    if (!this.qTable.has(stateKey)) {
+      this.qTable.set(stateKey, new Array(9).fill(this.defaultQ));
+    }
+    const qValues = this.qTable.get(stateKey);
     const currentQ = qValues[action];
 
     let maxNextQ = 0;
     if (!isTerminal && nextStateKey && nextLegalMoves && nextLegalMoves.length > 0) {
-      const nextQValues = this.getQValues(nextStateKey);
+      const nextQValues = this.peekQValues(nextStateKey);
       maxNextQ = Math.max(...nextLegalMoves.map(a => nextQValues[a]));
     }
 
@@ -197,7 +219,7 @@ class QLearningAgent {
     if (legalMoves.length === 0) return null;
 
     const stateKey = this.game.getCanonicalState(board, player);
-    const qValues = this.getQValues(stateKey);
+    const qValues = this.peekQValues(stateKey);
     const eps = forcedEpsilon !== null ? forcedEpsilon : this.epsilon;
 
     // Identify greedy actions among legal moves
@@ -262,6 +284,16 @@ class QLearningAgent {
     if (policy === 'random') {
       const idx = Math.floor(this.random() * legalMoves.length);
       return legalMoves[idx];
+    }
+
+    if (policy === 'balanced') {
+      // Documented curriculum mixture: 60% random exploratory moves for state-space coverage,
+      // 40% tactical heuristic moves for immediate threat defense and winning execution.
+      if (this.random() < 0.60) {
+        return this.selectOpponentAction(board, opponentPlayer, 'random');
+      } else {
+        return this.selectOpponentAction(board, opponentPlayer, 'heuristic');
+      }
     }
 
     if (policy === 'heuristic') {
@@ -468,6 +500,9 @@ class QLearningAgent {
 
     this.isTraining = true;
     this.shouldStopTraining = false;
+    this.trainingState = 'training';
+    // Snapshot initial exploration rate at start of this training run
+    this.initialEpsilon = this.epsilon;
 
     const chunkSize = Math.max(25, Math.min(250, Math.floor(totalEpisodes / 30)));
     let episodesCompleted = 0;
@@ -492,8 +527,10 @@ class QLearningAgent {
     }
 
     const runChunk = () => {
+      this.trainingTimerId = null;
       if (this.shouldStopTraining || episodesCompleted >= totalEpisodes) {
         this.isTraining = false;
+        this.trainingState = 'idle';
         // Final evaluation
         this.postTrainingEval = this.evaluateUnbiased(100, opponentPolicy);
         this.evaluationHistory.push({
@@ -547,7 +584,7 @@ class QLearningAgent {
         });
       }
 
-      setTimeout(runChunk, 4);
+      this.trainingTimerId = setTimeout(runChunk, 4);
     };
 
     runChunk();
@@ -556,6 +593,11 @@ class QLearningAgent {
   stopTraining() {
     if (this.isTraining) {
       this.shouldStopTraining = true;
+      this.trainingState = 'stopping';
+      if (this.trainingTimerId !== null) {
+        clearTimeout(this.trainingTimerId);
+        this.trainingTimerId = null;
+      }
     }
   }
 
@@ -592,9 +634,10 @@ class QLearningAgent {
       tableObj[k] = v;
     }
     return JSON.stringify({
-      version: '2.0',
+      version: '2.1',
       totalEpisodesTrained: this.totalEpisodesTrained,
       visitedCount: this.visitedActions.size,
+      visitedActions: Array.from(this.visitedActions),
       stats: this.trainingStats,
       baselineEval: this.baselineEval,
       postTrainingEval: this.postTrainingEval,
@@ -604,13 +647,39 @@ class QLearningAgent {
   }
 
   importPolicyJson(jsonStr) {
+    if (this.isTraining) {
+      console.warn('Cannot import policy while training is active.');
+      return false;
+    }
     try {
+      if (!jsonStr || typeof jsonStr !== 'string') return false;
       const data = JSON.parse(jsonStr);
+      if (!data || typeof data !== 'object') return false;
+      if (!data.qTable || typeof data.qTable !== 'object' || Array.isArray(data.qTable)) return false;
+
+      // Validate entries
+      for (const [k, v] of Object.entries(data.qTable)) {
+        if (!Array.isArray(v) || v.length !== 9 || !v.every(n => typeof n === 'number' && !isNaN(n))) {
+          return false;
+        }
+      }
+
       this.qTable.clear();
       this.visitedActions.clear();
-      if (data.qTable) {
+
+      for (const [k, v] of Object.entries(data.qTable)) {
+        this.qTable.set(k, [...v]);
+      }
+
+      if (Array.isArray(data.visitedActions)) {
+        for (const va of data.visitedActions) {
+          if (typeof va === 'string') {
+            this.visitedActions.add(va);
+          }
+        }
+      } else {
+        // Fallback for older v2.0 exports
         for (const [k, v] of Object.entries(data.qTable)) {
-          this.qTable.set(k, v);
           for (let a = 0; a < 9; a++) {
             if (v[a] !== 0) {
               this.visitedActions.add(`${k}:${a}`);
@@ -618,11 +687,14 @@ class QLearningAgent {
           }
         }
       }
-      this.totalEpisodesTrained = data.totalEpisodesTrained || 0;
-      this.trainingStats = data.stats || { wins: 0, draws: 0, losses: 0, episodes: 0 };
+
+      this.totalEpisodesTrained = typeof data.totalEpisodesTrained === 'number' ? data.totalEpisodesTrained : 0;
+      this.trainingStats = data.stats && typeof data.stats === 'object'
+        ? { ...data.stats }
+        : { wins: 0, draws: 0, losses: 0, episodes: 0 };
       this.baselineEval = data.baselineEval || null;
       this.postTrainingEval = data.postTrainingEval || null;
-      this.evaluationHistory = data.evaluationHistory || [];
+      this.evaluationHistory = Array.isArray(data.evaluationHistory) ? [...data.evaluationHistory] : [];
       return true;
     } catch (e) {
       console.error('Failed to import policy:', e);
