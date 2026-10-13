@@ -183,7 +183,10 @@ class DynamicProgrammingDemo {
               ${badge}
             </div>
             <div class="dp-cell-value">V = ${val.toFixed(2)}</div>
-            <div class="dp-cell-policy">Policy: <strong style="font-size: 1.1rem; color: var(--primary);">${policyArrow}</strong></div>
+            <div class="dp-cell-policy">
+              <span class="dp-policy-label">Policy</span>
+              <span class="dp-policy-arrow">${policyArrow}</span>
+            </div>
           </div>
         `;
       }
@@ -192,11 +195,12 @@ class DynamicProgrammingDemo {
     this.container.innerHTML = `
       <div class="dp-visualizer-wrapper">
         <div class="dp-header-bar">
-          <div>
-            <strong>Known 3×3 GridWorld Model (γ = ${this.gamma})</strong>
-            <p class="text-muted text-sm" style="margin: 2px 0 0 0;">
-              Iteration: <strong class="font-mono">${this.iteration}</strong> ${this.isConverged ? '<span class="badge badge-success" style="margin-left: 6px;">✓ Converged</span>' : ''}
-            </p>
+          <div class="dp-header-info">
+            <div class="dp-header-title">Known 3×3 GridWorld Model (γ = ${this.gamma})</div>
+            <div class="dp-header-sub">
+              Iteration: <strong class="font-mono">${this.iteration}</strong>
+              ${this.isConverged ? '<span class="badge badge-success" style="margin-left: 6px;">✓ Converged</span>' : ''}
+            </div>
           </div>
           <div class="dp-actions-row">
             <button class="btn btn-sm btn-outline" id="btn-dp-step">Step 1 Iteration</button>
