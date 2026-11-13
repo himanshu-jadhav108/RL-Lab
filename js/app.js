@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // THEME & AUDIO MANAGEMENT
   // -------------------------------------------------------------
   function initTheme() {
-    const savedTheme = localStorage.getItem('rl_lab_theme') || 'light';
+    const savedTheme = localStorage.getItem('rl_lab_theme') || 'dark';
     setTheme(savedTheme);
   }
 
@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnThemeToggle) {
       btnThemeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
       btnThemeToggle.title = theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+      btnThemeToggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme');
     }
     window.dispatchEvent(new CustomEvent('themeChanged'));
   }
@@ -193,15 +194,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // STEPPER NAVIGATION
   // -------------------------------------------------------------
   function switchStage(stageId) {
+    let activeTabEl = null;
     stageTabs.forEach(t => {
       const matches = t.getAttribute('data-stage') === stageId;
       t.classList.toggle('active', matches);
       t.setAttribute('aria-selected', matches ? 'true' : 'false');
+      if (matches) activeTabEl = t;
     });
 
     stagePanels.forEach(p => {
       p.classList.toggle('active', p.id === stageId);
     });
+
+    if (activeTabEl && typeof activeTabEl.scrollIntoView === 'function') {
+      try {
+        activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      } catch (e) {}
+    }
 
     if (stageId === 'stage-2') {
       setTimeout(() => analytics.resize(), 50);

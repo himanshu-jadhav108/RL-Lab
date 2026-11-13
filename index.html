@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -597,12 +597,15 @@
             </div>
 
             <!-- Model-Based DP vs Model-Free RL -->
-            <div style="margin-top: 18px;">
-              <h3 style="font-size: 0.95rem; font-weight: 700;">Dynamic Programming (DP) vs. Q-Learning</h3>
-              <p class="text-xs text-muted" style="margin-top: 4px;">
-                <strong>Model-Based DP</strong> computes values offline using full knowledge of transition probabilities <em>P(s'|s,a)</em> and rewards without stepping in the environment.
-                <strong>Model-Free Q-Learning</strong> requires zero prior transition model, discovering optimal play directly from trial-and-error gameplay samples.
-              </p>
+            <div class="dp-comparison-container" style="margin-top: 1.5rem;">
+              <div class="dp-section-header">
+                <span class="badge badge-teal" style="margin-bottom: 6px;">THEORY COMPARISON</span>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">Dynamic Programming (DP) vs. Q-Learning</h3>
+                <p class="text-xs text-muted" style="margin-top: 6px; line-height: 1.55;">
+                  <strong>Model-Based DP:</strong> Computes state values offline via Bellman Optimality sweeps using known transition probabilities <em>P(s'|s,a)</em> and rewards <em>R(s,a)</em> without environment sampling.<br>
+                  <strong>Model-Free Q-Learning:</strong> Discovers optimal play directly from trial-and-error gameplay samples with zero prior transition model.
+                </p>
+              </div>
               <div id="dpGridContainer" style="margin-top: 12px;"></div>
             </div>
           </div>

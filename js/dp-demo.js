@@ -171,10 +171,16 @@ class DynamicProgrammingDemo {
           cellClass += ' dp-cell-hazard';
           badge = '<span class="dp-tag hazard-tag">Hazard (-10)</span>';
         } else if (isStart) {
+          cellClass += ' dp-cell-start';
           badge = '<span class="dp-tag start-tag">Start</span>';
         }
 
         const policyArrow = this.getGreedyPolicy(idx);
+        const isTerminal = isGoal || isHazard;
+
+        let valClass = 'dp-val-zero';
+        if (val > 0.001) valClass = 'dp-val-pos';
+        else if (val < -0.001) valClass = 'dp-val-neg';
 
         gridHtml += `
           <div class="${cellClass}">
@@ -182,10 +188,13 @@ class DynamicProgrammingDemo {
               <span class="dp-cell-coord">(${r},${c})</span>
               ${badge}
             </div>
-            <div class="dp-cell-value">V = ${val.toFixed(2)}</div>
+            <div class="dp-cell-value ${valClass}">
+              <span class="dp-val-label">V =</span>
+              <span class="dp-val-num">${val.toFixed(2)}</span>
+            </div>
             <div class="dp-cell-policy">
               <span class="dp-policy-label">Policy</span>
-              <span class="dp-policy-arrow">${policyArrow}</span>
+              <span class="dp-policy-arrow ${isTerminal ? 'dp-terminal-arrow' : ''}">${policyArrow}</span>
             </div>
           </div>
         `;
