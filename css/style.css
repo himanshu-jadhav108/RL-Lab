@@ -51,8 +51,9 @@
   --chart-grid: rgba(255, 255, 255, 0.07);
   --chart-axis: #94a3b8;
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', Consolas, Monaco, monospace;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, Monaco, monospace;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.35);
@@ -121,7 +122,9 @@
 }
 
 /* Base Reset & Core Typography */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -142,7 +145,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   overflow-x: hidden;
-  transition: background-color var(--transition-normal), color var(--transition-normal);
+  transition:
+    background-color var(--transition-normal),
+    color var(--transition-normal);
 }
 
 /* App Container */
@@ -272,8 +277,15 @@ body {
 }
 
 @keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
 }
 
 .btn-icon {
@@ -408,8 +420,14 @@ body {
 }
 
 @keyframes panelFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Stage Header Banner */
@@ -425,7 +443,7 @@ body {
 }
 
 .stage-banner::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -500,7 +518,9 @@ body {
   box-shadow: var(--shadow-sm);
   padding: 1.35rem;
   margin-bottom: 1.25rem;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .card:hover {
@@ -609,7 +629,11 @@ body {
   user-select: none;
   aspect-ratio: 1 / 1;
   min-height: 0;
-  transition: transform 0.12s ease, border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform 0.12s ease,
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .board-cell:hover:not(.marked-x):not(.marked-o) {
@@ -649,8 +673,14 @@ body {
 }
 
 @keyframes winGlow {
-  0% { transform: scale(1); filter: brightness(1); }
-  100% { transform: scale(1.02); filter: brightness(1.2); }
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  100% {
+    transform: scale(1.02);
+    filter: brightness(1.2);
+  }
 }
 
 .cell-q-badge {
@@ -715,9 +745,15 @@ body {
   color: var(--text-secondary);
 }
 
-.stat-win { color: var(--teal); }
-.stat-draw { color: var(--primary); }
-.stat-loss { color: var(--danger); }
+.stat-win {
+  color: var(--teal);
+}
+.stat-draw {
+  color: var(--primary);
+}
+.stat-loss {
+  color: var(--danger);
+}
 
 /* Benchmark Results Box */
 .benchmark-results-box {
@@ -742,9 +778,21 @@ body {
   font-weight: 600;
 }
 
-.bench-win { background-color: var(--teal-subtle); color: var(--teal); border: 1px solid var(--teal); }
-.bench-draw { background-color: var(--primary-subtle); color: var(--primary); border: 1px solid var(--primary); }
-.bench-loss { background-color: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
+.bench-win {
+  background-color: var(--teal-subtle);
+  color: var(--teal);
+  border: 1px solid var(--teal);
+}
+.bench-draw {
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.bench-loss {
+  background-color: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
 
 /* Hyperparameters Grid */
 .episode-input-row {
@@ -1225,7 +1273,10 @@ body {
   justify-content: space-between;
   min-height: 105px;
   position: relative;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
   overflow: hidden;
 }
 
@@ -1237,17 +1288,29 @@ body {
 
 .dp-cell-start {
   border-color: rgba(59, 130, 246, 0.4);
-  background: linear-gradient(145deg, rgba(59, 130, 246, 0.12), var(--bg-card-subtle));
+  background: linear-gradient(
+    145deg,
+    rgba(59, 130, 246, 0.12),
+    var(--bg-card-subtle)
+  );
 }
 
 .dp-cell-goal {
-  background: linear-gradient(145deg, rgba(16, 185, 129, 0.18), var(--bg-card-subtle)) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(16, 185, 129, 0.18),
+    var(--bg-card-subtle)
+  ) !important;
   border: 2px solid var(--success) !important;
   box-shadow: 0 0 14px var(--success-glow);
 }
 
 .dp-cell-hazard {
-  background: linear-gradient(145deg, rgba(244, 63, 94, 0.18), var(--bg-card-subtle)) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(244, 63, 94, 0.18),
+    var(--bg-card-subtle)
+  ) !important;
   border: 2px solid var(--danger) !important;
   box-shadow: 0 0 14px var(--danger-glow);
 }
@@ -1399,11 +1462,21 @@ body {
   font-size: 0.95rem;
 }
 
-.test-passed .test-icon { color: var(--success); }
-.test-failed .test-icon { color: var(--danger); }
+.test-passed .test-icon {
+  color: var(--success);
+}
+.test-failed .test-icon {
+  color: var(--danger);
+}
 
-.test-content strong { color: var(--text-main); }
-.test-msg { color: var(--text-muted); font-size: 0.75rem; margin-top: 1px; }
+.test-content strong {
+  color: var(--text-main);
+}
+.test-msg {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 1px;
+}
 
 /* Tables */
 .table-responsive {
@@ -1614,11 +1687,31 @@ body {
   letter-spacing: 0.02em;
 }
 
-.badge-success { background-color: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
-.badge-danger { background-color: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
-.badge-secondary { background-color: var(--bg-card-subtle); color: var(--text-muted); border: 1px solid var(--border-color); }
-.badge-teal { background-color: var(--teal-subtle); color: var(--teal); border: 1px solid var(--teal); }
-.badge-primary { background-color: var(--primary-subtle); color: var(--primary); border: 1px solid var(--primary); }
+.badge-success {
+  background-color: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success-border);
+}
+.badge-danger {
+  background-color: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+.badge-secondary {
+  background-color: var(--bg-card-subtle);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+.badge-teal {
+  background-color: var(--teal-subtle);
+  color: var(--teal);
+  border: 1px solid var(--teal);
+}
+.badge-primary {
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
 
 .alert {
   padding: 0.85rem 1rem;
@@ -1651,15 +1744,33 @@ body {
 }
 
 /* Utilities */
-.text-sm { font-size: 0.85rem; }
-.text-xs { font-size: 0.75rem; }
-.text-muted { color: var(--text-muted); }
-.text-teal { color: var(--teal); }
-.text-primary { color: var(--primary); }
-.text-danger { color: var(--danger); }
-.font-mono { font-family: var(--font-mono); }
-.font-semibold { font-weight: 600; }
-.text-center { text-align: center; }
+.text-sm {
+  font-size: 0.85rem;
+}
+.text-xs {
+  font-size: 0.75rem;
+}
+.text-muted {
+  color: var(--text-muted);
+}
+.text-teal {
+  color: var(--teal);
+}
+.text-primary {
+  color: var(--primary);
+}
+.text-danger {
+  color: var(--danger);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}
+.font-semibold {
+  font-weight: 600;
+}
+.text-center {
+  text-align: center;
+}
 
 /* ========================================================= */
 /* COMPREHENSIVE RESPONSIVE DESIGN (DEVICE-FRIENDLY)        */
@@ -1727,7 +1838,9 @@ body {
   }
 
   /* Ensure touch targets meet 44px minimum */
-  .btn, .form-control, .form-select {
+  .btn,
+  .form-control,
+  .form-select {
     min-height: 44px;
   }
 
